@@ -21,10 +21,10 @@ else
     REGISTER=1
 fi
 
-#if [[ ! -d stackhpc-image-elements ]]; then
-#    git clone https://github.com/stackhpc/stackhpc-image-elements
-#fi
-#export ELEMENTS_PATH=$(pwd)/stackhpc-image-elements/elements
+if [[ ! -d stackhpc-image-elements ]]; then
+    git clone https://github.com/stackhpc/stackhpc-image-elements
+fi
+export ELEMENTS_PATH=$(pwd)/stackhpc-image-elements/elements
 
 if [[ ! -d sahara-image-elements ]]; then
     git clone https://github.com/stackhpc/sahara-image-elements \
@@ -48,29 +48,51 @@ case $OS_DISTRO in
         exit 1
         ;;
 esac
+PLUGIN=${PLUGIN:-spark}
+SPARK_VERSION=${SPARK_VERSION:-1.6.0}
+HADOOP_VERSION=${HADOOP_VERSION:-5.5}
+EXTRA_ELEMENTS=${EXTRA_ELEMENTS:-}
 
 # The following is required for --visibility and --os-distro arguments.
 export OS_IMAGE_API_VERSION=2
 
-NAME=${NAME:-sahara-spark-${OS_DISTRO}${DIB_RELEASE:+-${DIB_RELEASE}}}
+NAME=${NAME:-sahara-${PLUGIN}-${SPARK_VERSION}-${OS_DISTRO}${DIB_RELEASE:+-${DIB_RELEASE}}}
 FILENAME=${FILENAME:-$NAME}
 
 cd sahara-image-elements
 
 if [[ $BUILD -eq 1 ]]; then
     echo "Building image"
-    case $OS_DISTRO in
-      ubuntu)
-        export ubuntu_spark_image_name=${FILENAME}
+    case $PLUGIN in
+      vanilla)
+        case $OS_DISTRO in
+          ubuntu)
+            export ubuntu_vanilla_hadoop_2_7_1_image_name=${FILENAME}
+            ;;
+          centos7)
+            export centos7_vanilla_hadoop_2_7_1_image_name=${FILENAME}
+            ;;
+        esac
         ;;
-      centos7)
-        export centos7_spark_image_name=${FILENAME}
+      spark)
+        case $OS_DISTRO in
+          ubuntu)
+            export ubuntu_spark_image_name=${FILENAME}
+            ;;
+          centos7)
+            export centos7_spark_image_name=${FILENAME}
+            ;;
+        esac
         ;;
     esac
     tox -e venv -- \
       sahara-image-create \
-      -p spark \
+      -p ${PLUGIN} \
       -i ${OS_DISTRO} \
+      -s ${SPARK_VERSION} \
+      -v ${HADOOP_VERSION} \
+      -e ${EXTRA_ELEMENTS} \
+      -x \
       -b
     echo "Built image"
 fi
