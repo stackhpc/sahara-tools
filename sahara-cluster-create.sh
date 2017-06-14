@@ -14,9 +14,17 @@ case $OS_DISTRO in
         exit 1
         ;;
 esac
-SPARK_VERSION=${SPARK_VERSION:-1.6.0}
-SPARK_VERSION_HEAT=$(echo ${SPARK_VERSION} | sed -e 's/\./-/g')
-IMAGE_NAME=${IMAGE_NAME:-sahara-spark-${SPARK_VERSION}-${OS_DISTRO}${DIB_RELEASE:+-${DIB_RELEASE}}}
+PLUGIN=${PLUGIN:-spark}
+case $PLUGIN in
+    spark)
+        PLUGIN_VERSION=${SPARK_VERSION:-1.6.0}
+        ;;
+    vanilla)
+        PLUGIN_VERSION=${HADOOP_VERSION:-2.7.1}
+        ;;
+esac
+PLUGIN_VERSION_HEAT=$(echo ${PLUGIN_VERSION} | sed -e 's/\./-/g')
+IMAGE_NAME=${IMAGE_NAME:-sahara-${PLUGIN}-${PLUGIN_VERSION}-${OS_DISTRO}${DIB_RELEASE:+-${DIB_RELEASE}}}
 case $OS_DISTRO in
     centos7)
         IMAGE_USERNAME=centos
@@ -25,18 +33,28 @@ case $OS_DISTRO in
         IMAGE_USERNAME=$OS_DISTRO
         ;;
 esac
-NODE_GROUP_NAME_MASTER=${NODE_GROUP_NAME_MASTER:-spark-${SPARK_VERSION_HEAT}-master}
-NODE_GROUP_NAME_SLAVE=${NODE_GROUP_NAME_SLAVE:-spark-${SPARK_VERSION_HEAT}-slave}
-CLUSTER_TEMPLATE_NAME=${CLUSTER_TEMPLATE_NAME:-spark-${SPARK_VERSION_HEAT}}
-CLUSTER_NAME=${CLUSTER_NAME:-spark-${SPARK_VERSION_HEAT}-${OS_DISTRO}${DIB_RELEASE:+-${DIB_RELEASE}}}
+NODE_GROUP_NAME_MASTER=${NODE_GROUP_NAME_MASTER:-${PLUGIN}-${PLUGIN_VERSION_HEAT}-master}
+NODE_GROUP_NAME_SLAVE=${NODE_GROUP_NAME_SLAVE:-${PLUGIN}-${PLUGIN_VERSION_HEAT}-slave}
+CLUSTER_TEMPLATE_NAME=${CLUSTER_TEMPLATE_NAME:-${PLUGIN}-${PLUGIN_VERSION_HEAT}}
+CLUSTER_NAME=${CLUSTER_NAME:-${PLUGIN}-${PLUGIN_VERSION_HEAT}-${OS_DISTRO}${DIB_RELEASE:+-${DIB_RELEASE}}}
 FLAVOR=${FLAVOR:-compute-A}
 NUM_SLAVES=${NUM_SLAVES:-2}
+case $PLUGIN in
+    spark)
+        MASTER_PROCESSES=${MASTER_PROCESSES:-"namenode datanode master slave"}
+        SLAVE_PROCESSES=${SLAVE_PROCESSES:-"datanode slave"}
+        ;;
+    vanilla)
+        MASTER_PROCESSES=${MASTER_PROCESSES:-"namenode datanode resourcemanager nodemanager"}
+        SLAVE_PROCESSES=${SLAVE_PROCESSES:-"datanode nodemanager"}
+        ;;
+esac
 KEYPAIR_NAME=${KEYPAIR_NAME:-alaska-gate}
 NETWORK_NAME=${NETWORK_NAME:-ilab}
 
-# Display spark plugin.
-openstack dataprocessing plugin show spark
-openstack dataprocessing plugin configs get spark ${SPARK_VERSION}
+# Display plugin.
+openstack dataprocessing plugin show ${PLUGIN}
+openstack dataprocessing plugin configs get ${PLUGIN} ${PLUGIN_VERSION}
 
 # Image registration.
 if ! openstack dataprocessing image show ${IMAGE_NAME} >/dev/null 2>&1; then
@@ -45,24 +63,24 @@ if ! openstack dataprocessing image show ${IMAGE_NAME} >/dev/null 2>&1; then
         --username ${IMAGE_USERNAME}
     openstack dataprocessing image tags add \
         ${IMAGE_NAME} \
-        --tags spark ${SPARK_VERSION}
+        --tags ${PLUGIN} ${PLUGIN_VERSION}
 fi
 
 # Create a node group templates.
 if ! openstack dataprocessing node group template show ${NODE_GROUP_NAME_MASTER} >/dev/null 2>&1; then
     openstack dataprocessing node group template create \
         --name ${NODE_GROUP_NAME_MASTER} \
-        --plugin spark \
-        --plugin-version ${SPARK_VERSION} \
-        --processes namenode datanode master slave \
+        --plugin ${PLUGIN} \
+        --plugin-version ${PLUGIN_VERSION} \
+        --processes ${MASTER_PROCESSES} \
         --flavor ${FLAVOR}
 fi
 if ! openstack dataprocessing node group template show ${NODE_GROUP_NAME_SLAVE} >/dev/null 2>&1; then
     openstack dataprocessing node group template create \
         --name ${NODE_GROUP_NAME_SLAVE} \
-        --plugin spark \
-        --plugin-version ${SPARK_VERSION} \
-        --processes datanode slave \
+        --plugin ${PLUGIN} \
+        --plugin-version ${PLUGIN_VERSION} \
+        --processes ${SLAVE_PROCESSES} \
         --flavor ${FLAVOR}
 fi
 
