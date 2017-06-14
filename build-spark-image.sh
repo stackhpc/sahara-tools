@@ -21,21 +21,6 @@ else
     REGISTER=1
 fi
 
-if [[ ! -d stackhpc-image-elements ]]; then
-    git clone https://github.com/stackhpc/stackhpc-image-elements
-fi
-export ELEMENTS_PATH=$(pwd)/stackhpc-image-elements/elements
-
-if [[ ! -d sahara-image-elements ]]; then
-    git clone https://github.com/stackhpc/sahara-image-elements \
-        -b stackhpc-6.0.0.1
-fi
-
-virtualenv dib-venv
-source dib-venv/bin/activate
-pip install -U pip
-pip install tox
-
 OS_DISTRO=${OS_DISTRO:-ubuntu}
 case $OS_DISTRO in
     ubuntu)
@@ -51,13 +36,37 @@ esac
 PLUGIN=${PLUGIN:-spark}
 SPARK_VERSION=${SPARK_VERSION:-1.6.0}
 HADOOP_VERSION=${HADOOP_VERSION:-5.5}
+case $PLUGIN in
+    spark)
+        PLUGIN_VERSION=${SPARK_VERSION}
+        ;;
+    vanilla)
+        PLUGIN_VERSION=${HADOOP_VERSION}
+        ;;
+esac
 EXTRA_ELEMENTS=${EXTRA_ELEMENTS:-}
+
+IMAGE_NAME=${IMAGE_NAME:-sahara-${PLUGIN}-${PLUGIN_VERSION}-${OS_DISTRO}${DIB_RELEASE:+-${DIB_RELEASE}}}
+FILENAME=${FILENAME:-$IMAGE_NAME}
+
+# Support use of DIB elements from our repository.
+export ELEMENTS_PATH=$(pwd)/stackhpc-image-elements/elements
 
 # The following is required for --visibility and --os-distro arguments.
 export OS_IMAGE_API_VERSION=2
 
-NAME=${NAME:-sahara-${PLUGIN}-${SPARK_VERSION}-${OS_DISTRO}${DIB_RELEASE:+-${DIB_RELEASE}}}
-FILENAME=${FILENAME:-$NAME}
+if [[ ! -d stackhpc-image-elements ]]; then
+    git clone https://github.com/stackhpc/stackhpc-image-elements
+fi
+if [[ ! -d sahara-image-elements ]]; then
+    git clone https://github.com/stackhpc/sahara-image-elements \
+        -b stackhpc-6.0.0.1
+fi
+
+virtualenv dib-venv
+source dib-venv/bin/activate
+pip install -U pip
+pip install tox
 
 cd sahara-image-elements
 
@@ -99,19 +108,19 @@ fi
 
 if [[ $REGISTER -eq 1 ]]; then
     echo "Registering images"
-    KERNEL_ID=`glance image-create --name ${NAME}-kernel \
+    KERNEL_ID=`glance image-create --name ${IMAGE_NAME}-kernel \
                                    --visibility public \
                                    --disk-format=aki \
                                    --container-format=aki \
                                    --file=${FILENAME}.vmlinuz \
                                    | grep id | tr -d '| ' | cut --bytes=3-57`
-    RAMDISK_ID=`glance image-create --name ${NAME}-ramdisk \
+    RAMDISK_ID=`glance image-create --name ${IMAGE_NAME}-ramdisk \
                                     --visibility public \
                                     --disk-format=ari \
                                     --container-format=ari \
                                     --file=${FILENAME}.initrd \
                                     | grep id |  tr -d '| ' | cut --bytes=3-57`
-    BASE_ID=`glance image-create --name ${NAME} \
+    BASE_ID=`glance image-create --name ${IMAGE_NAME} \
                                     --os-distro ${OS_DISTRO} \
                                     --visibility public \
                                     --disk-format=qcow2 \
