@@ -1,0 +1,9 @@
+export OS_DISTRO=centos7
+export PLUGIN=spark
+export SPARK_VERSION=2.1.0
+export HADOOP_VERSION=2.7.1
+export EXTRA_ELEMENTS="mlnx-ofed" 
+
+# Mellanox OFED packages.
+export DIB_MLNX_OFED_REPO=http://10.41.253.100:4120/MLNX_OFED_LINUX-4.0-2.0.0.1-rhel7.3-x86_64
+export DIB_MLNX_OFED_VERSION=4.0-2.0.0.1

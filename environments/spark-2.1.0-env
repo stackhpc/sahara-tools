@@ -1,0 +1,6 @@
+export OS_DISTRO=centos7
+export PLUGIN=spark
+export SPARK_VERSION=2.1.0
+unset HADOOP_VERSION
+unset EXTRA_ELEMENTS
+unset swift_url
