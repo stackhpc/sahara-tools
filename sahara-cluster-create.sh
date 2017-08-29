@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # Register all resources necessary to create a spark cluster using sahara.
 
@@ -54,7 +54,7 @@ NETWORK_NAME=${NETWORK_NAME:-ilab}
 
 # Display plugin.
 openstack dataprocessing plugin show ${PLUGIN}
-openstack dataprocessing plugin configs get ${PLUGIN} ${PLUGIN_VERSION}
+openstack dataprocessing plugin configs get ${PLUGIN} ${PLUGIN_VERSION} || true
 
 # Image registration.
 if ! openstack dataprocessing image show ${IMAGE_NAME} >/dev/null 2>&1; then
