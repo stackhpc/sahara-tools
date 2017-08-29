@@ -23,8 +23,16 @@ case $PLUGIN in
         PLUGIN_VERSION=${HADOOP_VERSION:-2.7.1}
         ;;
 esac
+
 PLUGIN_VERSION_HEAT=$(echo ${PLUGIN_VERSION} | sed -e 's/\./-/g')
 IMAGE_NAME=${IMAGE_NAME:-sahara-${PLUGIN}-${PLUGIN_VERSION}-${OS_DISTRO}${DIB_RELEASE:+-${DIB_RELEASE}}}
+
+# FIXME: avoid 'supporting' hadoop 2.8.0 in sahara for now.
+if [[ $PLUGIN_VERSION = '2.8.0' ]]; then
+    PLUGIN_VERSION='2.7.3'
+    PLUGIN_VERSION_HEAT='2-7-3'
+fi
+
 case $OS_DISTRO in
     centos7)
         IMAGE_USERNAME=centos
