@@ -94,11 +94,23 @@ fi
 
 # Create a cluster template.
 if ! openstack dataprocessing cluster template show ${CLUSTER_TEMPLATE_NAME} >/dev/null 2>&1; then
+    TMP_CONFIG=$(mktemp)
+    cat > ${TMP_CONFIG} << EOF
+{
+    "Hadoop": {
+        "hadoop.ib.enabled": true,
+        "hadoop.roce.enabled": false,
+        "hadoop.rdma.dev.name": "mlx5_0"
+    }
+}
+EOF
     openstack dataprocessing cluster template create \
         --name ${CLUSTER_TEMPLATE_NAME} \
         --node-groups ${NODE_GROUP_NAME_MASTER}:1 \
         ${NODE_GROUP_NAME_SLAVE}:${NUM_SLAVES} \
-        --autoconfig
+        --autoconfig \
+        --config ${TMP_CONFIG}
+    rm ${TMP_CONFIG}
 fi
 
 # Create a cluster.
