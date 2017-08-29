@@ -12,7 +12,8 @@ Images can be built and/or registered with Glance using
     ./build-spark-image.sh [<build|register>]
 
 Various environment variables are accepted, see the environment files under
-``environment`` for examples.
+``environment`` for examples. The built images will be present under the
+``sahara-image-elements`` directory.
 
 Creating clusters
 -----------------
