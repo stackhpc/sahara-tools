@@ -26,7 +26,7 @@ case $OS_DISTRO in
     ubuntu)
         export DIB_RELEASE=${DIB_RELEASE:-trusty}
         ;;
-    centos7)
+    centos | centos7)
         ;;
     *)
         echo "Unexpected OS_DISTRO $OS_DISTRO"
@@ -76,10 +76,43 @@ if [[ $BUILD -eq 1 ]]; then
       vanilla)
         case $OS_DISTRO in
           ubuntu)
-            export ubuntu_vanilla_hadoop_2_7_1_image_name=${FILENAME}
+            case $HADOOP_VERSION in
+              2.7.1)
+                export ubuntu_vanilla_hadoop_2_7_1_image_name=${FILENAME}
+                ;;
+              2.7.3)
+                export ubuntu_vanilla_hadoop_2_7_3_image_name=${FILENAME}
+                ;;
+              2.8.0)
+                export ubuntu_vanilla_hadoop_2_8_0_image_name=${FILENAME}
+                ;;
+            esac
+            ;;
+          centos)
+            case $HADOOP_VERSION in
+              2.7.1)
+                export centos_vanilla_hadoop_2_7_1_image_name=${FILENAME}
+                ;;
+              2.7.3)
+                export centos_vanilla_hadoop_2_7_3_image_name=${FILENAME}
+                ;;
+              2.8.0)
+                export centos_vanilla_hadoop_2_8_0_image_name=${FILENAME}
+                ;;
+            esac
             ;;
           centos7)
-            export centos7_vanilla_hadoop_2_7_1_image_name=${FILENAME}
+            case $HADOOP_VERSION in
+              2.7.1)
+                export centos7_vanilla_hadoop_2_7_1_image_name=${FILENAME}
+                ;;
+              2.7.3)
+                export centos7_vanilla_hadoop_2_7_3_image_name=${FILENAME}
+                ;;
+              2.8.0)
+                export centos7_vanilla_hadoop_2_8_0_image_name=${FILENAME}
+                ;;
+            esac
             ;;
         esac
         ;;
@@ -87,6 +120,9 @@ if [[ $BUILD -eq 1 ]]; then
         case $OS_DISTRO in
           ubuntu)
             export ubuntu_spark_image_name=${FILENAME}
+            ;;
+          centos)
+            export centos_spark_image_name=${FILENAME}
             ;;
           centos7)
             export centos7_spark_image_name=${FILENAME}
@@ -131,4 +167,7 @@ if [[ $REGISTER -eq 1 ]]; then
                                     | grep -v kernel | grep -v ramdisk \
                                     | grep id | tr -d '| ' | cut --bytes=3-57`
     echo "Registered images"
+    echo "Kernel: $KERNEL_ID"
+    echo "Ramdisk: $RAMDISK_ID"
+    echo "Image: $BASE_ID"
 fi
