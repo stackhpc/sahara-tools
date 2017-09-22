@@ -101,6 +101,9 @@ if ! openstack dataprocessing cluster template show ${CLUSTER_TEMPLATE_NAME} >/d
         "hadoop.ib.enabled": true,
         "hadoop.roce.enabled": false,
         "hadoop.rdma.dev.name": "mlx5_0"
+    },
+    "HDFS": {
+        "dfs.master": "\${yarn.nodemanager.hostname}"
     }
 }
 EOF
